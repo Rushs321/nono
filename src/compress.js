@@ -17,8 +17,8 @@ export async function compressImg(request, reply, stream) {
       .toFormat(imgFormat, {
         quality, // Use the provided quality
         progressive: true,
-        optimizeScans: webp, // Optimize scans only for WebP
-        chromaSubsampling: webp ? '4:4:4' : '4:2:0', // Conditional chroma subsampling
+        optimizeScans: true, // Optimize scans only for WebP
+        chromaSubsampling: '4:4:4' // Conditional chroma subsampling
       });
 
     // Pipe the incoming stream into sharp and then into the PassThrough stream
