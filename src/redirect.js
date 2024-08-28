@@ -1,7 +1,5 @@
 export function redirect(request, reply) {
-  if (reply.sent) {
-    return;
-  }
+  if (reply.sent) return; // Prevent multiple sends
 
   reply
     .header('content-length', 0)
