@@ -1,10 +1,14 @@
 import sharp from 'sharp';
+import { PassThrough } from 'stream';
 import { redirect } from './redirect.js';
 
 // Function to handle image compression and respond with the compressed image
 export async function compressImg(request, reply, stream) {
   const { webp, grayscale, quality, originSize } = request.params;
   const imgFormat = webp ? 'webp' : 'jpeg';
+
+  // Create a PassThrough stream to handle the compressed image data
+  const passThrough = new PassThrough();
 
   try {
     // Create a Sharp instance and configure it for streaming
@@ -17,22 +21,22 @@ export async function compressImg(request, reply, stream) {
         chromaSubsampling: webp ? '4:4:4' : '4:2:0', // Conditional chroma subsampling
       });
 
-    // Pipe the input stream into sharp, and pipe the result into the response
-    stream.pipe(sharpInstance)
-      .on('error', (error) => {
-        console.error('Sharp processing error:', error);
-        reply.raw.end(); // Ensure the response is ended properly on error
-      })
-      .pipe(reply)
-      .on('finish', () => {
-        console.log('Image compression and response completed successfully.');
-      });
-    
-    // Set response headers before streaming starts
+    // Pipe the incoming stream into sharp and then into the PassThrough stream
+    stream.pipe(sharpInstance).pipe(passThrough);
+
+    // Set response headers
     reply.header('content-type', `image/${imgFormat}`);
     reply.header('x-original-size', originSize);
     
-    // Add additional headers if needed
+    // Handle errors from sharp processing
+    sharpInstance.on('error', (error) => {
+      console.error('Sharp processing error:', error);
+      reply.raw.end(); // Ensure the response is ended properly on error
+    });
+
+    // Pipe the PassThrough stream to the response
+    passThrough.pipe(reply.raw);
+    
   } catch (error) {
     console.error('Compression error:', error);
     return redirect(request, reply); // Redirect on compression failure
