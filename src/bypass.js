@@ -1,4 +1,5 @@
 export function bypass(request, reply, stream) {
+    if (reply.sent) return;
     reply.header('x-proxy-bypass', 1);
 
     // Pipe the input stream directly to the reply stream
